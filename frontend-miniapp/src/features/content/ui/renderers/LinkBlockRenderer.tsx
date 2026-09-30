@@ -3,9 +3,42 @@ import type {
   LinkBlock,
 } from "@/entities/content/model/types";
 import { trackAnalyticsEventInBackground } from "@/features/analytics/api/analyticsApi";
+import { getApiBotSlug } from "@/lib/botSlug";
 import { openLink } from "@/max/bridge";
 
+import "./LinkBlockRenderer.css";
+
+const KRUTYA_BOT_SLUG = "krutya_bot";
+const KRUTYA_HOME_SLUG = "system-home-screen";
+
+function isUnavailableKrutyaService(block: LinkBlock, contentSlug: string): boolean {
+  return (
+    getApiBotSlug() === KRUTYA_BOT_SLUG &&
+    contentSlug === KRUTYA_HOME_SLUG &&
+    block.title.startsWith("Чат-бот ") &&
+    !block.title.includes("Ректор")
+  );
+}
+
 export function LinkBlockRenderer({ block, content }: BlockRendererProps<LinkBlock>) {
+  const unavailable = isUnavailableKrutyaService(block, content.slug);
+
+  if (unavailable) {
+    return (
+      <div
+        className={`cms-link cms-link--${block.style} cms-link--unavailable`}
+        aria-disabled="true"
+      >
+        <span className="cms-link__unavailable-content">
+          <span>{block.title}</span>
+          <span className="cms-link__unavailable-caption">
+            Не подключён к конкурсному стенду
+          </span>
+        </span>
+      </div>
+    );
+  }
+
   const open = () => {
     trackAnalyticsEventInBackground({
       action_type: "content_block_interaction",
