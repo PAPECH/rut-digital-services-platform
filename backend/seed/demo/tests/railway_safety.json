@@ -1,0 +1,262 @@
+{
+  "slug": "railway-safety",
+  "name": "Безопасность на железнодорожном транспорте",
+  "intro_text": "Короткий тест из 6 вопросов о правилах безопасного поведения на железной дороге. Займёт около двух минут.",
+  "schema": {
+    "elements": [
+      {
+        "key": "questionnaire_title_1",
+        "type": "questionnaire_title",
+        "label": "Безопасность на железнодорожном транспорте"
+      },
+      {
+        "key": "instruction_2",
+        "type": "instruction",
+        "label": "Выберите один вариант ответа в каждом вопросе."
+      },
+      {
+        "key": "single_choice_3",
+        "type": "single_choice",
+        "label": "Где разрешено переходить железнодорожные пути?",
+        "required": true,
+        "scoring_key": "q1",
+        "options": [
+          {
+            "label": "По пешеходному мосту, тоннелю или оборудованному переходу",
+            "value": "1",
+            "score": 1.0
+          },
+          {
+            "label": "В любом месте, если поезда не видно",
+            "value": "2",
+            "score": 0.0
+          },
+          {
+            "label": "Под вагонами стоящего поезда",
+            "value": "3",
+            "score": 0.0
+          },
+          {
+            "label": "Вдоль пути по краю платформы",
+            "value": "4",
+            "score": 0.0
+          }
+        ]
+      },
+      {
+        "key": "single_choice_4",
+        "type": "single_choice",
+        "label": "Где нужно ожидать поезд на платформе?",
+        "required": true,
+        "scoring_key": "q2",
+        "options": [
+          {
+            "label": "На самом краю платформы, чтобы быстрее зайти",
+            "value": "1",
+            "score": 0.0
+          },
+          {
+            "label": "За ограничительной линией, не подходя к краю",
+            "value": "2",
+            "score": 1.0
+          },
+          {
+            "label": "На путях рядом с платформой",
+            "value": "3",
+            "score": 0.0
+          },
+          {
+            "label": "Спиной к краю платформы",
+            "value": "4",
+            "score": 0.0
+          }
+        ]
+      },
+      {
+        "key": "single_choice_5",
+        "type": "single_choice",
+        "label": "Шлагбаум на переезде поднят, но светофор мигает красным. Можно переходить?",
+        "required": true,
+        "scoring_key": "q3",
+        "options": [
+          {
+            "label": "Да, раз шлагбаум поднят",
+            "value": "1",
+            "score": 0.0
+          },
+          {
+            "label": "Да, если идти быстро",
+            "value": "2",
+            "score": 0.0
+          },
+          {
+            "label": "Нет, красный сигнал запрещает движение",
+            "value": "3",
+            "score": 1.0
+          },
+          {
+            "label": "Только велосипедистам",
+            "value": "4",
+            "score": 0.0
+          }
+        ]
+      },
+      {
+        "key": "single_choice_6",
+        "type": "single_choice",
+        "label": "Ближе какого расстояния запрещено приближаться к контактным проводам?",
+        "required": true,
+        "scoring_key": "q4",
+        "options": [
+          {
+            "label": "0,5 метра",
+            "value": "1",
+            "score": 0.0
+          },
+          {
+            "label": "1 метр",
+            "value": "2",
+            "score": 0.0
+          },
+          {
+            "label": "2 метров",
+            "value": "3",
+            "score": 1.0
+          },
+          {
+            "label": "Ограничений нет, если провод не искрит",
+            "value": "4",
+            "score": 0.0
+          }
+        ]
+      },
+      {
+        "key": "single_choice_7",
+        "type": "single_choice",
+        "label": "На пути с платформы упал телефон. Что делать?",
+        "required": true,
+        "scoring_key": "q5",
+        "options": [
+          {
+            "label": "Быстро спрыгнуть и поднять",
+            "value": "1",
+            "score": 0.0
+          },
+          {
+            "label": "Обратиться к работнику железной дороги",
+            "value": "2",
+            "score": 1.0
+          },
+          {
+            "label": "Подождать, пока уйдёт поезд, и спуститься",
+            "value": "3",
+            "score": 0.0
+          },
+          {
+            "label": "Попросить друга подержать за руку и достать",
+            "value": "4",
+            "score": 0.0
+          }
+        ]
+      },
+      {
+        "key": "single_choice_8",
+        "type": "single_choice",
+        "label": "Что из перечисленного запрещено на железной дороге?",
+        "required": true,
+        "scoring_key": "q6",
+        "options": [
+          {
+            "label": "Проезд на подножках и крышах вагонов",
+            "value": "1",
+            "score": 0.0
+          },
+          {
+            "label": "Подъём на опоры контактной сети",
+            "value": "2",
+            "score": 0.0
+          },
+          {
+            "label": "Нахождение на путях в наушниках",
+            "value": "3",
+            "score": 0.0
+          },
+          {
+            "label": "Всё перечисленное",
+            "value": "4",
+            "score": 1.0
+          }
+        ]
+      }
+    ],
+    "result_scales": [
+      {
+        "key": "correct",
+        "label": "Правильные ответы",
+        "terms": [
+          {
+            "weight": 1.0,
+            "question_key": "q1",
+            "result_scale_key": null
+          },
+          {
+            "weight": 1.0,
+            "question_key": "q2",
+            "result_scale_key": null
+          },
+          {
+            "weight": 1.0,
+            "question_key": "q3",
+            "result_scale_key": null
+          },
+          {
+            "weight": 1.0,
+            "question_key": "q4",
+            "result_scale_key": null
+          },
+          {
+            "weight": 1.0,
+            "question_key": "q5",
+            "result_scale_key": null
+          },
+          {
+            "weight": 1.0,
+            "question_key": "q6",
+            "result_scale_key": null
+          }
+        ],
+        "constant": 0.0,
+        "aggregation": "sum"
+      }
+    ],
+    "filters": [
+      {
+        "result_scale_key": "correct",
+        "rules": [
+          {
+            "min": 6,
+            "max": 6,
+            "label": "Отлично",
+            "is_flagged": false,
+            "recommendation_text": "Вы знаете правила безопасности на железной дороге."
+          },
+          {
+            "min": 4,
+            "max": 5,
+            "label": "Хорошо",
+            "is_flagged": false,
+            "recommendation_text": "Почти всё верно — повторите пару правил."
+          },
+          {
+            "min": null,
+            "max": 3,
+            "label": "Стоит повторить",
+            "is_flagged": false,
+            "recommendation_text": "Рекомендуем ещё раз прочитать правила безопасного поведения на железной дороге."
+          }
+        ]
+      }
+    ],
+    "result_template": "Правильных ответов: {{result:correct.value}} из 6. {{result:correct.label}}. {{result:correct.recommendation}}"
+  }
+}

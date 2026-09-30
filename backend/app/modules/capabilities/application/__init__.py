@@ -1,0 +1,1 @@
+"""Capability installation use cases."""

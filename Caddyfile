@@ -1,0 +1,11 @@
+app.rut-platform.ru {
+    reverse_proxy 127.0.0.1:5174
+}
+
+admin.rut-platform.ru {
+    reverse_proxy 127.0.0.1:5173
+}
+
+bot.rut-platform.ru { 
+   reverse_proxy 127.0.0.1:8080
+}

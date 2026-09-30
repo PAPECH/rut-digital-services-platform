@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+  <link rel="icon" href="/favicon.ico" />
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>РУТ · Админ-панель</title>
+
+</head>
+
+<body>
+  <div id="root"></div>
+  <!-- Print target for CampaignLinkPrintView (Task 026): a body-level sibling of #root, kept
+       empty/hidden on screen. Printing directly from a node nested inside the app tree fought
+       ancestor overflow:hidden (modal chrome) and visibility:hidden layout gaps (invisible-but-
+       still-laid-out siblings pushing the poster onto a second page) -- portaling the poster here
+       sidesteps both, since nothing else in the app is a sibling it can be clipped by or pushed
+       down by. -->
+  <div id="print-root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
+</html>

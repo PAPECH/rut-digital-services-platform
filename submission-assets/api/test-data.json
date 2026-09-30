@@ -1,0 +1,63 @@
+{
+  "schema_version": "1.0",
+  "solution": "Платформа цифровых сервисов РУТ в MAX",
+  "data_classification": "Демонстрационные данные для технической проверки; реальные чувствительные персональные данные не требуются.",
+  "bots": {
+    "student_entry": {
+      "name": "Помощник кРУТя",
+      "slug": "krutya_bot",
+      "max_username": "se14502978_bot"
+    },
+    "rector_reception": {
+      "name": "Приёмная ректора",
+      "slug": "rut_rector_bot",
+      "max_username": "se14502978_1_bot"
+    },
+    "jury_access": {
+      "name": "Технический бот платформы",
+      "max_username": "t36_hakaton_max_bot",
+      "invite_url": "https://max.ru/t36_hakaton_max_bot?startapp=inv_HNyYvtmfG3rn6SU2UoXuNzNv8l6_MNpYkPFA65CXo84"
+    }
+  },
+  "roles": {
+    "student": {
+      "account": "Собственный аккаунт MAX проверяющего",
+      "separate_login_password": false
+    },
+    "rector_secretary": {
+      "account": "Собственный аккаунт MAX проверяющего после перехода по приглашению",
+      "separate_login_password": false
+    }
+  },
+  "scenario_input": {
+    "schedule_group": "Любая доступная группа из дерева расписания",
+    "rector_form_slug": "form-priem",
+    "appointment_purpose": "Предлагаю добавить в цифровые сервисы университета оперативные уведомления об изменениях в расписании.",
+    "appointment_duration_minutes": [15, 30],
+    "appointment_window": {
+      "weekday": "Thursday",
+      "time_from": "10:00",
+      "time_to": "12:00",
+      "timezone": "Europe/Moscow"
+    },
+    "appointment_location": "Главный корпус РУТ (МИИТ), кабинет 1201",
+    "student_reminder": "При себе необходимо иметь студенческий билет.",
+    "follow_up_question": "Нужно ли дополнительно брать с собой паспорт?",
+    "staff_reply": "Паспорт не требуется, достаточно студенческого билета. Остались ли у вас вопросы?"
+  },
+  "dynamic_values": {
+    "MAX_INIT_DATA_KRUTYA": "Получается при запуске мини-приложения Помощника кРУТи внутри MAX.",
+    "MAX_INIT_DATA_RECTOR": "Получается при запуске мини-приложения Приёмной ректора внутри MAX.",
+    "GROUP_EXTERNAL_ID": "Берётся из ответа navigation-tree.",
+    "RECTOR_FORM_ID": "Берётся из ответа GET /api/forms для slug form-priem.",
+    "RECTOR_FORM_VERSION_ID": "Берётся из ответа GET /api/forms для slug form-priem.",
+    "PURPOSE_FIELD_KEY": "Берётся из fields опубликованной формы по label Цель приёма.",
+    "SUBMISSION_ID": "Берётся из ответа POST /api/submissions.",
+    "STUDENT_USER_PK": "Берётся из поля user_id созданной заявки.",
+    "DATE_FROM": "Начальная дата диапазона проверки талонов в формате YYYY-MM-DD.",
+    "DATE_TO": "Конечная дата диапазона проверки талонов в формате YYYY-MM-DD.",
+    "SLOT_START_1": "Свободный 15-минутный интервал в четверг с 10:00 до 11:45.",
+    "SLOT_START_2": "Следующий соседний интервал; используется только для встречи на 30 минут.",
+    "UNIQUE_SUFFIX": "Уникальная строка для идемпотентности повторного теста."
+  }
+}

@@ -1,0 +1,1 @@
+"""Admission rating HTTP presentation."""

@@ -1,0 +1,1 @@
+"""Platform-administrator persistence adapters."""

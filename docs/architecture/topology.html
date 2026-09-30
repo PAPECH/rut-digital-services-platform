@@ -1,0 +1,481 @@
+<title>Топология бот-платформы</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f5f6f0;
+    --surface:#ffffff;
+    --surface-2:#edefe6;
+    --surface-pg:#eef0f6;
+    --surface-redis:#f8f1e2;
+    --border:#d9dbcd;
+    --border-strong:#b7bba5;
+    --text:#1b1e16;
+    --text-dim:#5a6150;
+    --text-faint:#868c78;
+    --accent:#2c6e63;
+
+    --c-rest:#3557c7;
+    --c-ws:#7c3fae;
+    --c-queue:#a8631c;
+    --c-external:#1f7a63;
+    --c-neutral:#6b7161;
+    --c-neutral-strong:#3a3f30;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#14150f;
+      --surface:#1c1e16;
+      --surface-2:#23261b;
+      --surface-pg:#1b1d24;
+      --surface-redis:#241f13;
+      --border:#33372a;
+      --border-strong:#454a37;
+      --text:#eef0e4;
+      --text-dim:#b7bba8;
+      --text-faint:#888d78;
+      --accent:#5fb3a4;
+
+      --c-rest:#8ea3ff;
+      --c-ws:#c79bf0;
+      --c-queue:#e3a862;
+      --c-external:#5fcbb0;
+      --c-neutral:#a7ac99;
+      --c-neutral-strong:#d8dbcb;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#14150f;
+    --surface:#1c1e16;
+    --surface-2:#23261b;
+    --surface-pg:#1b1d24;
+    --surface-redis:#241f13;
+    --border:#33372a;
+    --border-strong:#454a37;
+    --text:#eef0e4;
+    --text-dim:#b7bba8;
+    --text-faint:#888d78;
+    --accent:#5fb3a4;
+
+    --c-rest:#8ea3ff;
+    --c-ws:#c79bf0;
+    --c-queue:#e3a862;
+    --c-external:#5fcbb0;
+    --c-neutral:#a7ac99;
+    --c-neutral-strong:#d8dbcb;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"Manrope",system-ui,sans-serif;
+    padding:40px 24px 64px;
+  }
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:11px;
+    letter-spacing:.12em;
+    text-transform:uppercase;
+    color:var(--accent);
+    font-weight:600;
+    margin:0 0 10px;
+  }
+  h1{
+    font-size:clamp(26px,3.4vw,34px);
+    font-weight:800;
+    letter-spacing:-.01em;
+    margin:0 0 10px;
+    text-wrap:balance;
+  }
+  .lede{
+    font-size:15px;
+    line-height:1.55;
+    color:var(--text-dim);
+    max-width:66ch;
+    margin:0 0 30px;
+  }
+  .lede code{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:13px;
+    background:var(--surface-2);
+    padding:1px 5px;
+    border-radius:4px;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 18px;
+    padding:14px 18px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    margin-bottom:22px;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    font-size:12.5px;
+    color:var(--text-dim);
+    white-space:nowrap;
+  }
+  .swatch{
+    width:16px;height:2.5px;border-radius:2px;flex:none;
+  }
+  .swatch.dashed{
+    background:repeating-linear-gradient(to right,currentColor 0 5px,transparent 5px 9px);
+    height:2.5px;
+  }
+  .legend-note{
+    font-size:12.5px;
+    color:var(--text-faint);
+    margin-left:auto;
+  }
+
+  figure{margin:0 0 8px;}
+  .diagram-scroll{
+    overflow-x:auto;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:8px;
+  }
+  svg{display:block;width:100%;height:auto;min-width:920px;}
+  figcaption{
+    font-size:12.5px;
+    color:var(--text-faint);
+    margin:10px 2px 40px;
+    line-height:1.5;
+  }
+
+  .box-title{font-family:"Manrope",sans-serif;font-weight:700;font-size:14.5px;fill:var(--text);}
+  .box-sub{font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:10.3px;fill:var(--text-dim);}
+  .box-sub2{font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:10.3px;fill:var(--text-faint);}
+  .box-tag{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:9px;letter-spacing:.08em;fill:var(--text-faint);}
+
+  .edge-label{font-family:"IBM Plex Mono",monospace;font-size:10.6px;}
+  .label-bg{fill:var(--bg);opacity:.92;}
+
+  .box-fill{fill:var(--surface);}
+  .box-fill-2{fill:var(--surface-2);}
+  .box-fill-pg{fill:var(--surface-pg);}
+  .box-fill-redis{fill:var(--surface-redis);}
+  .box-stroke{stroke:var(--border-strong);stroke-width:1.4;}
+  .box-stroke-dashed{stroke:var(--border-strong);stroke-width:1.4;stroke-dasharray:5 4;}
+
+  .edge{fill:none;stroke-width:1.6;}
+  .edge-dashed{stroke-dasharray:5 4;}
+  .rest{stroke:var(--c-rest);color:var(--c-rest);}
+  .ws{stroke:var(--c-ws);color:var(--c-ws);}
+  .queue{stroke:var(--c-queue);color:var(--c-queue);}
+  .external{stroke:var(--c-external);color:var(--c-external);}
+  .neutral{stroke:var(--c-neutral);color:var(--c-neutral);}
+  .neutral-strong{stroke:var(--c-neutral-strong);color:var(--c-neutral-strong);}
+  .fill-rest{fill:var(--c-rest);}
+  .fill-ws{fill:var(--c-ws);}
+  .fill-queue{fill:var(--c-queue);}
+  .fill-external{fill:var(--c-external);}
+  .fill-neutral{fill:var(--c-neutral);}
+  .fill-neutral-strong{fill:var(--c-neutral-strong);}
+
+  table{
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:12px;
+    overflow:hidden;
+  }
+  .table-scroll{overflow-x:auto;border-radius:12px;}
+  thead th{
+    text-align:left;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:10.5px;
+    letter-spacing:.06em;
+    text-transform:uppercase;
+    color:var(--text-faint);
+    font-weight:600;
+    padding:12px 16px;
+    border-bottom:1px solid var(--border);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:12px 16px;
+    border-bottom:1px solid var(--border);
+    vertical-align:top;
+    line-height:1.45;
+    color:var(--text);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody td:first-child{font-weight:600;white-space:nowrap;}
+  td .mono{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--text-dim);}
+  td .dim{color:var(--text-dim);font-size:12.5px;}
+  .tag{
+    display:inline-block;
+    font-family:"IBM Plex Mono",monospace;
+    font-size:9.5px;
+    letter-spacing:.05em;
+    padding:2px 6px;
+    border-radius:5px;
+    margin-bottom:5px;
+  }
+
+  h2{
+    font-size:15px;
+    font-weight:700;
+    margin:44px 0 14px;
+    padding-top:2px;
+  }
+  .foot{
+    margin-top:26px;
+    font-size:12.5px;
+    color:var(--text-faint);
+    line-height:1.6;
+  }
+  .foot p{margin:0 0 8px;}
+  .foot code{font-family:"IBM Plex Mono",monospace;background:var(--surface-2);padding:1px 5px;border-radius:4px;color:var(--text-dim);}
+</style>
+
+<div class="wrap">
+  <p class="eyebrow">Universal Bot Platform</p>
+  <h1>Топология бот-платформы</h1>
+  <p class="lede">
+    Кто с кем связан и куда физически идут запросы: <code>bot</code>, <code>backend</code>,
+    <code>worker</code>, admin- и mini-app, Redis, PostgreSQL — по коду в
+    <code>docker-compose.yml</code>, nginx-конфигам фронтендов и клиентам backend/bot.
+  </p>
+
+  <div class="legend">
+    <span class="legend-item"><span class="swatch" style="background:var(--c-rest)"></span>REST&nbsp;API</span>
+    <span class="legend-item"><span class="swatch dashed" style="color:var(--c-neutral)"></span>внутр. переадресация nginx→backend</span>
+    <span class="legend-item"><span class="swatch" style="background:var(--c-queue)"></span>Redis (очередь / лимиты)</span>
+    <span class="legend-item"><span class="swatch" style="background:var(--c-neutral-strong)"></span>PostgreSQL (SQL)</span>
+    <span class="legend-item"><span class="swatch" style="background:var(--c-external)"></span>внешний MAX API / webhook</span>
+    <span class="legend-note">стрелка = кто инициирует соединение</span>
+  </div>
+
+  <figure>
+    <div class="diagram-scroll">
+      <svg viewBox="0 0 1560 740" role="img" aria-label="Схема связей: браузер администратора и клиент MAX обращаются через reverse-proxy к frontend-admin и frontend-miniapp, чьи nginx-контейнеры проксируют /api и /ws к backend по внутренней docker-сети; бот получает вебхуки от платформы MAX через тот же proxy, вызывает backend напрямую (ingress, ai/callback) и отправляет ответы через MAX Bot API в обход proxy; backend пишет в Postgres и Redis (rate-limit, idempotency); worker читает Postgres, кладёт push-уведомления в очередь Redis, которую разбирает bot.">
+        <defs>
+          <marker id="arrow" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 Z" fill="context-stroke"/>
+          </marker>
+        </defs>
+
+        <!-- ===== ROW A : external actors ===== -->
+        <g>
+          <rect x="90" y="36" width="230" height="84" rx="12" class="box-fill box-stroke"/>
+          <text x="205" y="70" text-anchor="middle" class="box-title">Админ · браузер</text>
+          <text x="205" y="90" text-anchor="middle" class="box-sub">administrator UI</text>
+
+          <rect x="605" y="36" width="230" height="84" rx="12" class="box-fill box-stroke"/>
+          <text x="720" y="63" text-anchor="middle" class="box-title">MAX-клиент</text>
+          <text x="720" y="82" text-anchor="middle" class="box-sub">чат + вебвью</text>
+          <text x="720" y="97" text-anchor="middle" class="box-sub2">мини-аппа</text>
+
+          <rect x="1120" y="36" width="230" height="84" rx="12" class="box-fill-2 box-stroke-dashed"/>
+          <text x="1235" y="63" text-anchor="middle" class="box-title">Платформа MAX</text>
+          <text x="1235" y="82" text-anchor="middle" class="box-sub">внешние серверы</text>
+          <text x="1235" y="97" text-anchor="middle" class="box-sub2">мессенджера</text>
+        </g>
+
+        <!-- peer edge: MAX client <-> MAX platform -->
+        <path d="M835,78 L1120,78" class="edge external" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+        <rect x="905" y="60" width="150" height="16" rx="4" class="label-bg"/>
+        <text x="980" y="72" text-anchor="middle" class="edge-label external">чат / мини-апп</text>
+
+        <!-- ===== ROW B : reverse proxy ===== -->
+        <rect x="90" y="176" width="1260" height="60" rx="12" class="box-fill-2 box-stroke-dashed"/>
+        <text x="720" y="200" text-anchor="middle" class="box-title">Reverse-proxy · TLS-терминация</text>
+        <text x="720" y="219" text-anchor="middle" class="box-sub">хост, вне docker-compose · маршрутизация по доменам</text>
+
+        <!-- actor -> app, passing through proxy layer -->
+        <path d="M205,120 L204,316" class="edge rest"/>
+        <rect x="178" y="208" width="54" height="16" rx="4" class="label-bg"/>
+        <text x="205" y="220" text-anchor="middle" class="edge-label rest">HTTPS</text>
+
+        <path d="M720,120 L462,316" class="edge rest"/>
+        <rect x="548" y="208" width="112" height="16" rx="4" class="label-bg"/>
+        <text x="604" y="220" text-anchor="middle" class="edge-label rest">HTTPS (вебвью)</text>
+
+        <path d="M1235,120 L1236,316" class="edge external" marker-end="url(#arrow)"/>
+        <rect x="1200" y="208" width="70" height="16" rx="4" class="label-bg"/>
+        <text x="1235" y="220" text-anchor="middle" class="edge-label external">webhook</text>
+
+        <!-- above-row elbows (frontend-admin -> backend, bot -> backend) -->
+        <path d="M260,316 L260,258 L680,258 L680,316" class="edge neutral edge-dashed" marker-end="url(#arrow)"/>
+        <rect x="392" y="248" width="66" height="16" rx="4" class="label-bg"/>
+        <text x="425" y="260" text-anchor="middle" class="edge-label neutral">/api, /ws</text>
+
+        <path d="M1180,316 L1180,258 L760,258 L760,316" class="edge rest" marker-end="url(#arrow)"/>
+        <rect x="925" y="248" width="58" height="16" rx="4" class="label-bg"/>
+        <text x="954" y="260" text-anchor="middle" class="edge-label rest">ingress</text>
+
+        <!-- ===== ROW C : app containers ===== -->
+        <g>
+          <rect x="90" y="316" width="228" height="124" rx="12" class="box-fill box-stroke"/>
+          <text x="204" y="350" text-anchor="middle" class="box-title">frontend-admin</text>
+          <text x="204" y="374" text-anchor="middle" class="box-sub">nginx · статика SPA</text>
+          <text x="204" y="392" text-anchor="middle" class="box-sub2">:7802→80</text>
+
+          <rect x="348" y="316" width="228" height="124" rx="12" class="box-fill box-stroke"/>
+          <text x="462" y="350" text-anchor="middle" class="box-title">frontend-miniapp</text>
+          <text x="462" y="374" text-anchor="middle" class="box-sub">nginx · статика SPA</text>
+          <text x="462" y="392" text-anchor="middle" class="box-sub2">:7803→80</text>
+
+          <rect x="606" y="316" width="228" height="124" rx="12" class="box-fill box-stroke" style="stroke-width:1.8"/>
+          <text x="720" y="350" text-anchor="middle" class="box-title">backend</text>
+          <text x="720" y="374" text-anchor="middle" class="box-sub">FastAPI</text>
+          <text x="720" y="392" text-anchor="middle" class="box-sub2">:7801→8000</text>
+
+          <rect x="864" y="316" width="228" height="124" rx="12" class="box-fill box-stroke"/>
+          <text x="978" y="350" text-anchor="middle" class="box-title">worker</text>
+          <text x="978" y="374" text-anchor="middle" class="box-sub">APScheduler</text>
+          <text x="978" y="392" text-anchor="middle" class="box-sub2">тот же образ · без порта</text>
+
+          <rect x="1122" y="316" width="228" height="124" rx="12" class="box-fill box-stroke"/>
+          <text x="1236" y="350" text-anchor="middle" class="box-title">bot</text>
+          <text x="1236" y="374" text-anchor="middle" class="box-sub">MAX-адаптер</text>
+          <text x="1236" y="392" text-anchor="middle" class="box-sub2">:7800→8080</text>
+        </g>
+
+        <!-- frontend-miniapp -> backend (adjacent, internal) -->
+        <path d="M576,378 L606,378" class="edge neutral edge-dashed" marker-end="url(#arrow)"/>
+        <rect x="580" y="358" width="44" height="15" rx="4" class="label-bg"/>
+        <text x="602" y="369" text-anchor="middle" class="edge-label neutral" style="font-size:9.6px">/api/*</text>
+
+        <!-- bot -> MAX platform bypass (right side, skips proxy) -->
+        <path d="M1350,360 L1400,360 L1400,80 L1350,80" class="edge external" marker-end="url(#arrow)"/>
+        <rect x="1406" y="213" width="70" height="16" rx="4" class="label-bg"/>
+        <text x="1441" y="225" text-anchor="middle" class="edge-label external">Bot API</text>
+
+        <!-- ===== below-row band: app -> data ===== -->
+        <path d="M660,440 L660,580" class="edge neutral-strong" marker-end="url(#arrow)"/>
+        <rect x="666" y="494" width="70" height="16" rx="4" class="label-bg"/>
+        <text x="701" y="506" text-anchor="middle" class="edge-label neutral-strong">SQL R/W</text>
+
+        <path d="M780,440 L880,580" class="edge queue" marker-end="url(#arrow)"/>
+        <rect x="790" y="494" width="80" height="16" rx="4" class="label-bg"/>
+        <text x="830" y="506" text-anchor="middle" class="edge-label queue">rate-limit</text>
+
+        <path d="M940,440 L760,580" class="edge neutral-strong" marker-end="url(#arrow)"/>
+        <rect x="796" y="540" width="58" height="16" rx="4" class="label-bg"/>
+        <text x="825" y="552" text-anchor="middle" class="edge-label neutral-strong">джобы</text>
+
+        <path d="M1020,440 L1020,580" class="edge queue" marker-end="url(#arrow)"/>
+        <rect x="1028" y="494" width="98" height="16" rx="4" class="label-bg"/>
+        <text x="1077" y="506" text-anchor="middle" class="edge-label queue">push:queue ←</text>
+
+        <path d="M1160,440 L940,580" class="edge queue edge-dashed" marker-end="url(#arrow)"/>
+        <rect x="1015" y="540" width="108" height="16" rx="4" class="label-bg"/>
+        <text x="1069" y="552" text-anchor="middle" class="edge-label queue">читает queue</text>
+
+        <!-- ===== ROW E : data layer ===== -->
+        <g>
+          <rect x="606" y="580" width="228" height="110" rx="12" class="box-fill-pg box-stroke" style="stroke-width:1.8"/>
+          <text x="720" y="614" text-anchor="middle" class="box-title">PostgreSQL</text>
+          <text x="720" y="638" text-anchor="middle" class="box-sub">pgvector</text>
+          <text x="720" y="655" text-anchor="middle" class="box-sub2">:5117→5432 · db-data</text>
+
+          <rect x="864" y="580" width="228" height="110" rx="12" class="box-fill-redis box-stroke" style="stroke-width:1.8"/>
+          <text x="978" y="614" text-anchor="middle" class="box-title">Redis</text>
+          <text x="978" y="638" text-anchor="middle" class="box-sub">AOF-персистентность</text>
+          <text x="978" y="655" text-anchor="middle" class="box-sub2">:6379 · redis-data</text>
+        </g>
+      </svg>
+    </div>
+    <figcaption>
+      Сплошные линии — исходящий вызов (кто инициирует, тот и стрелка); пунктир — либо внутренняя переадресация nginx→backend внутри docker-сети, либо чтение общей Redis-очереди. Полный список эндпойнтов, заголовков и назначения каждой связи — в таблице ниже.
+    </figcaption>
+  </figure>
+
+  <h2>Связи подробно</h2>
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr><th>Связь</th><th>Протокол / эндпойнт</th><th>Аутентификация</th><th>Комментарий</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>браузер → frontend-admin → backend</td>
+        <td><span class="mono">HTTPS → /api/*, /ws/*</span></td>
+        <td>Bearer JWT (access) + refresh в HttpOnly-cookie</td>
+        <td class="dim">nginx контейнера форвардит <span class="mono">/api</span> и <span class="mono">/ws</span> на <span class="mono">backend:8000</span> по внутренней docker-сети (см. <span class="mono">frontend-admin/nginx.conf</span>); в проде внешний nginx может проксировать эти пути в backend напрямую, минуя контейнер.</td>
+      </tr>
+      <tr>
+        <td>MAX-клиент → frontend-miniapp → backend</td>
+        <td><span class="mono">HTTPS → /api/*</span> (вкл. <span class="mono">/api/ws/chat</span>)</td>
+        <td>initData (подпись MAX) → <span class="mono">POST /auth/init-data/validate</span> → JWT</td>
+        <td class="dim">Тот же паттерн: nginx мини-аппа форвардит всё под <span class="mono">/api</span> на <span class="mono">backend:8000</span>.</td>
+      </tr>
+      <tr>
+        <td>MAX-клиент ↔ платформа MAX</td>
+        <td class="dim">обычный чат, открытие мини-аппа</td>
+        <td class="dim">—</td>
+        <td class="dim">Вне нашей системы — стандартный протокол мессенджера MAX.</td>
+      </tr>
+      <tr>
+        <td>платформа MAX → bot</td>
+        <td><span class="mono">webhook POST</span></td>
+        <td>подписка через <span class="mono">bot.subscribe_webhook()</span></td>
+        <td class="dim">Публичный URL вебхука выходит наружу через тот же reverse-proxy, на порт <span class="mono">:7800</span>.</td>
+      </tr>
+      <tr>
+        <td>bot → платформа MAX</td>
+        <td>MAX Bot API — отправка сообщений/вложений</td>
+        <td>токен бота из тома <span class="mono">bot-secrets</span></td>
+        <td class="dim">Исходящий вызов наружу, в обход нашего reverse-proxy.</td>
+      </tr>
+      <tr>
+        <td>bot → backend</td>
+        <td><span class="mono">POST /api/messages/ingress</span><br><span class="mono">POST /api/messages/ai/callback</span></td>
+        <td><span class="mono">X-Bot-Token</span>, <span class="mono">X-Bot-Runtime-Token</span>, <span class="mono">X-Bot-Slug</span></td>
+        <td class="dim">Синхронный REST на <span class="mono">BOT_INTERNAL_API_URL</span>; так входящие сообщения пользователя попадают в backend.</td>
+      </tr>
+      <tr>
+        <td>backend → PostgreSQL</td>
+        <td>SQL (SQLAlchemy)</td>
+        <td class="dim">—</td>
+        <td class="dim">Все tenant-owned сущности скоуплены по <span class="mono">bot_instance_id</span>.</td>
+      </tr>
+      <tr>
+        <td>backend → Redis</td>
+        <td><span class="mono">INCR/EXPIRE</span> (rate-limit), <span class="mono">SET NX EX</span> (идемпотентность)</td>
+        <td class="dim">—</td>
+        <td class="dim">Идемпотентность защищает <span class="mono">/messages/ingress</span> от повторной обработки одного вебхука (окно 3600с).</td>
+      </tr>
+      <tr>
+        <td>worker → PostgreSQL</td>
+        <td>SQL, джобы APScheduler</td>
+        <td class="dim">—</td>
+        <td class="dim"><span class="mono">push_outbox</span>, <span class="mono">monitoring</span>, <span class="mono">admissions_monitoring</span>, sync рейтинга поступления.</td>
+      </tr>
+      <tr>
+        <td>worker → Redis</td>
+        <td><span class="mono">RPUSH {system}:{bot_slug}:push:queue</span>, лок <span class="mono">SET NX EX</span></td>
+        <td class="dim">—</td>
+        <td class="dim">Берёт неотправленные строки <span class="mono">push_outbox</span> из Postgres и кладёт в очередь; лок нужен, чтобы несколько реплик worker не задублировали доставку.</td>
+      </tr>
+      <tr>
+        <td>bot → Redis</td>
+        <td>чтение той же очереди <span class="mono">push:queue</span></td>
+        <td class="dim">—</td>
+        <td class="dim">Забирает подготовленные push-сообщения и рассылает их через MAX Bot API — отдельный от синхронного ingress путь.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+
+  <div class="foot">
+    <p><strong>Слои, не показанные как отдельные узлы:</strong> общие docker-volume — <code>uploads-data</code> (файлы, backend + worker), <code>bot-secrets</code> (секреты бота: read-write у backend, read-only у bot), <code>db-data</code>, <code>redis-data</code>.</p>
+    <p><strong>Dev-режим</strong> (<code>docker-compose.dev.yml</code>): reverse-proxy отсутствует, все порты торчат на localhost напрямую — backend <code>:8000</code>, bot <code>:8080</code>, admin <code>:5173</code>, miniapp <code>:5174</code>, Postgres <code>:5432</code>, Redis <code>:6379</code>.</p>
+  </div>
+</div>

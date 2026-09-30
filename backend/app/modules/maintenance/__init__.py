@@ -1,0 +1,1 @@
+"""Maintenance-mode bounded context."""

@@ -1,0 +1,304 @@
+schema_version: "1.0"
+solution: "Платформа цифровых сервисов РУТ в MAX"
+team: "РУТ (МИИТ)"
+base_url: "https://app.rut-platform.ru"
+openapi_file: "openapi.json"
+test_data_file: "test-data.json"
+
+authentication:
+  student_krutya:
+    role: "Студент-первокурсник"
+    method: "MAX Web App initData -> Bearer JWT"
+    bot_slug: "krutya_bot"
+    obtain:
+      method: POST
+      path: "/api/auth/init-data/validate"
+      headers:
+        Content-Type: "application/json"
+        X-Bot-Slug: "krutya_bot"
+      body:
+        initData: "${MAX_INIT_DATA_KRUTYA}"
+        system: "max"
+        acceptConsent: true
+      capture:
+        STUDENT_TOKEN_KRUTYA: "$.token.access_token"
+    note: "initData формируется MAX при запуске мини-приложения и имеет ограниченный срок действия."
+
+  student_rector:
+    role: "Студент-первокурсник"
+    method: "MAX Web App initData -> Bearer JWT"
+    bot_slug: "rut_rector_bot"
+    obtain:
+      method: POST
+      path: "/api/auth/init-data/validate"
+      headers:
+        Content-Type: "application/json"
+        X-Bot-Slug: "rut_rector_bot"
+      body:
+        initData: "${MAX_INIT_DATA_RECTOR}"
+        system: "max"
+        acceptConsent: true
+      capture:
+        STUDENT_TOKEN_RECTOR: "$.token.access_token"
+    note: "Для проверки используется аккаунт MAX проверяющего; отдельный пароль студента не требуется."
+
+  rector_secretary:
+    role: "Секретарь Приёмной ректора"
+    method: "Административная сессия MAX -> Bearer JWT"
+    bot_slug: "rut_rector_bot"
+    obtain: "Перейти по пригласительной ссылке из JURY_GUIDE.md и войти через MAX."
+    variables:
+      ADMIN_TOKEN: "Краткоживущий access_token активной административной сессии"
+    note: "Рабочие токены и секреты намеренно не включены в комплект сдачи."
+
+variables:
+  GROUP_EXTERNAL_ID: "Получить из institutes[].courses[].groups[].external_id проверки schedule-navigation."
+  RECTOR_FORM_ID: "Получить из элемента со slug form-priem проверки rector-forms."
+  RECTOR_FORM_VERSION_ID: "Получить из version_id элемента со slug form-priem проверки rector-forms."
+  PURPOSE_FIELD_KEY: "Получить из fields[].key опубликованной формы; поле имеет label Цель приёма."
+  SUBMISSION_ID: "Получить из id проверки create-rector-submission."
+  STUDENT_USER_PK: "Получить из user_id проверки create-rector-submission."
+  SLOT_START_1: "Свободный четверг, 10:00-11:45, ISO 8601 с часовым поясом +03:00."
+  SLOT_START_2: "Необязательный соседний 15-минутный слот для встречи продолжительностью 30 минут."
+
+checks:
+  - id: health
+    title: "Доступность backend"
+    role: "Без авторизации"
+    request:
+      method: GET
+      path: "/healthz"
+      headers: {Accept: "application/json"}
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_required_fields: {status: "string", env: "string"}
+      assertions: ["status == ok"]
+
+  - id: schedule-navigation
+    title: "Каталог институтов, курсов и групп"
+    role: "Студент-первокурсник"
+    request:
+      method: GET
+      path: "/api/capabilities/rut-schedule/navigation-tree"
+      headers:
+        Accept: "application/json"
+        Authorization: "Bearer ${STUDENT_TOKEN_KRUTYA}"
+        X-Bot-Slug: "krutya_bot"
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_required_fields: {institutes: "array"}
+      assertions:
+        - "institutes содержит не менее одного института"
+        - "у группы присутствуют external_id и name"
+
+  - id: group-schedule
+    title: "Расписание выбранной учебной группы"
+    role: "Студент-первокурсник"
+    depends_on: [schedule-navigation]
+    request:
+      method: GET
+      path: "/api/capabilities/rut-schedule/groups/${GROUP_EXTERNAL_ID}/schedule"
+      headers:
+        Accept: "application/json"
+        Authorization: "Bearer ${STUDENT_TOKEN_KRUTYA}"
+        X-Bot-Slug: "krutya_bot"
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_required_fields:
+        group: "object"
+        lessons: "array"
+        synced_at: "string"
+        semester_start: "string|null"
+        semester_end: "string|null"
+
+  - id: rector-forms
+    title: "Опубликованные формы Приёмной ректора"
+    role: "Студент-первокурсник"
+    request:
+      method: GET
+      path: "/api/forms"
+      headers:
+        Accept: "application/json"
+        Authorization: "Bearer ${STUDENT_TOKEN_RECTOR}"
+        X-Bot-Slug: "rut_rector_bot"
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_type: "array"
+      required_item_fields: [id, slug, name, version_id, version]
+      assertions: ["массив содержит активную форму со slug form-priem"]
+
+  - id: rector-form-schema
+    title: "Схема формы записи на приём"
+    role: "Студент-первокурсник"
+    depends_on: [rector-forms]
+    request:
+      method: GET
+      path: "/api/forms/${RECTOR_FORM_ID}"
+      headers:
+        Accept: "application/json"
+        Authorization: "Bearer ${STUDENT_TOKEN_RECTOR}"
+        X-Bot-Slug: "rut_rector_bot"
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_required_fields:
+        id: "integer"
+        slug: "string"
+        version_id: "integer"
+        fields: "array"
+      assertions:
+        - "slug == form-priem"
+        - "fields содержит обязательное поле с label Цель приёма"
+
+  - id: create-rector-submission
+    title: "Создание заявки на встречу с ректором"
+    role: "Студент-первокурсник"
+    depends_on: [rector-form-schema]
+    request:
+      method: POST
+      path: "/api/submissions"
+      headers:
+        Accept: "application/json"
+        Content-Type: "application/json"
+        Authorization: "Bearer ${STUDENT_TOKEN_RECTOR}"
+        X-Bot-Slug: "rut_rector_bot"
+      body:
+        form_template_id: "${RECTOR_FORM_ID}"
+        form_version_id: "${RECTOR_FORM_VERSION_ID}"
+        values:
+          "${PURPOSE_FIELD_KEY}": "Предлагаю добавить оперативные уведомления об изменениях в расписании."
+        idempotency_key: "jury-${UNIQUE_SUFFIX}"
+    expected:
+      status_codes: [201]
+      content_type: "application/json"
+      json_required_fields:
+        id: "integer"
+        user_id: "integer"
+        status: "string"
+        created_at: "string"
+      assertions: ["status == new"]
+
+  - id: list-rector-submissions
+    title: "Получение заявки сотрудником"
+    role: "Секретарь Приёмной ректора"
+    depends_on: [create-rector-submission]
+    request:
+      method: GET
+      path: "/api/submissions?form_id=${RECTOR_FORM_ID}&limit=100&offset=0"
+      headers:
+        Accept: "application/json"
+        Authorization: "Bearer ${ADMIN_TOKEN}"
+        X-Bot-Slug: "rut_rector_bot"
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_type: "array"
+      assertions: ["массив содержит заявку ${SUBMISSION_ID}"]
+
+  - id: appointment-slots
+    title: "Проверка занятых талонов"
+    role: "Секретарь Приёмной ректора"
+    request:
+      method: GET
+      path: "/api/submissions/appointments/slots?date_from=${DATE_FROM}&date_to=${DATE_TO}"
+      headers:
+        Accept: "application/json"
+        Authorization: "Bearer ${ADMIN_TOKEN}"
+        X-Bot-Slug: "rut_rector_bot"
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_type: "array"
+      required_item_fields: [starts_at, submission_id]
+
+  - id: take-submission-in-work
+    title: "Перевод заявки в работу"
+    role: "Секретарь Приёмной ректора"
+    depends_on: [create-rector-submission]
+    request:
+      method: PATCH
+      path: "/api/submissions/${SUBMISSION_ID}/status"
+      headers:
+        Accept: "application/json"
+        Content-Type: "application/json"
+        Authorization: "Bearer ${ADMIN_TOKEN}"
+        X-Bot-Slug: "rut_rector_bot"
+      body: {status: "in_work"}
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_required_fields: {id: "integer", status: "string"}
+      assertions: ["status == in_work"]
+
+  - id: book-appointment
+    title: "Назначение встречи, завершение заявки и уведомление в MAX"
+    role: "Секретарь Приёмной ректора"
+    depends_on: [appointment-slots, take-submission-in-work]
+    request:
+      method: PUT
+      path: "/api/submissions/${SUBMISSION_ID}/appointment"
+      headers:
+        Accept: "application/json"
+        Content-Type: "application/json"
+        Authorization: "Bearer ${ADMIN_TOKEN}"
+        X-Bot-Slug: "rut_rector_bot"
+      body:
+        slot_starts: ["${SLOT_START_1}"]
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_required_fields: {id: "integer", appointment: "object"}
+      assertions:
+        - "status == done"
+        - "appointment.duration_minutes равен 15 или 30"
+        - "appointment.location содержит Главный корпус и кабинет 1201"
+        - "студент получает сообщение в MAX"
+
+  - id: secretary-conversations
+    title: "Появление обращения в тикетах"
+    role: "Секретарь Приёмной ректора"
+    precondition: "Студент написал уточняющий вопрос боту Приёмной ректора и нажал Вызвать сотрудника в MAX."
+    request:
+      method: GET
+      path: "/api/tickets/conversations?user_id=${STUDENT_USER_PK}&only_open=true&limit=50"
+      headers:
+        Accept: "application/json"
+        Authorization: "Bearer ${ADMIN_TOKEN}"
+        X-Bot-Slug: "rut_rector_bot"
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_type: "array"
+      required_item_fields: [user_id, max_user_id, system, has_open_ticket]
+
+  - id: secretary-reply
+    title: "Ответ секретаря студенту"
+    role: "Секретарь Приёмной ректора"
+    depends_on: [secretary-conversations]
+    request:
+      method: POST
+      path: "/api/messages/to-user/${STUDENT_USER_PK}"
+      headers:
+        Accept: "application/json"
+        Content-Type: "application/json"
+        Authorization: "Bearer ${ADMIN_TOKEN}"
+        X-Bot-Slug: "rut_rector_bot"
+      body:
+        text: "Паспорт не требуется, достаточно студенческого билета. Остались ли у вас вопросы?"
+        mark_as_read: true
+    expected:
+      status_codes: [200]
+      content_type: "application/json"
+      json_required_fields: {id: "integer", user_id: "integer", direction: "string", created_at: "string"}
+      assertions: ["ответ доставляется студенту в чат MAX"]
+
+notes:
+  - "Основной сценарий проверяется через интерфейсы MAX и административной платформы по JURY_GUIDE.md."
+  - "DATA-API.yaml фиксирует тот же сценарий на уровне HTTP-контракта."
+  - "Переменные с токенами краткоживущие и намеренно не хранятся в репозитории."
+  - "Для повторной проверки создаётся новая заявка и выбирается свободный интервал."
+  - "Назначение встречи автоматически переводит заявку в done; отдельный PATCH статуса после бронирования не выполняется."

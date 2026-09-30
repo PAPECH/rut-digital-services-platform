@@ -1,0 +1,154 @@
+name: multi-bot-dev
+
+services:
+  db:
+    container_name: multi-bot-dev-db
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    ports:
+      - '127.0.0.1:5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    container_name: multi-bot-dev-redis
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ['redis-server', '--appendonly', 'yes']
+    volumes:
+      - redis-data:/data
+    ports:
+      - '127.0.0.1:6379:6379'
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  bot-secrets-init:
+    container_name: multi-bot-dev-secrets-init
+    image: alpine:3.20
+    restart: "no"
+    command: ['sh', '-c', 'chown 10001:10001 /secrets && chmod 700 /secrets']
+    volumes:
+      - bot-secrets:/secrets
+
+  backend:
+    container_name: multi-bot-dev-backend
+    build:
+      context: ./backend
+      target: runtime
+    image: multi-bot/backend:dev
+    restart: unless-stopped
+    env_file: ${SERVICE_ENV_FILE:-.env}
+    environment:
+      APP_ROLE: api
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      bot-secrets-init:
+        condition: service_completed_successfully
+    volumes:
+      - uploads-data:/app/uploads
+      - bot-secrets:/app/secrets
+      - ./backend:/app
+    ports:
+      - '8000:8000'
+    healthcheck:
+      test: ['CMD', 'curl', '-fsS', 'http://localhost:8000/healthz']
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 30s
+
+  worker:
+    container_name: multi-bot-dev-worker
+    build:
+      context: ./backend
+      target: runtime
+    image: multi-bot/backend:dev
+    restart: unless-stopped
+    env_file: ${SERVICE_ENV_FILE:-.env}
+    environment:
+      APP_ROLE: worker
+    depends_on:
+      backend:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - uploads-data:/app/uploads
+      - ./backend:/app
+    command: ['python', '-m', 'app.workers.run']
+
+  bot:
+    container_name: multi-bot-dev-bot-supervisor
+    build:
+      context: ./bot
+      target: runtime
+    image: multi-bot/bot-supervisor:dev
+    restart: unless-stopped
+    env_file: ${SERVICE_ENV_FILE:-.env}
+    environment:
+      BOT_SUPERVISOR_INTERVAL_SECONDS: ${BOT_SUPERVISOR_INTERVAL_SECONDS:-10}
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./bot:/app
+      - bot-secrets:/app/secrets:ro
+    command: ['python', '-m', 'app.supervisor']
+    ports:
+      - '8080:8080'
+
+  frontend-admin:
+    container_name: multi-bot-dev-admin
+    build:
+      context: ./frontend-admin
+      args:
+        VITE_MAX_BOT_USERNAME: ${MAX_BOT_USERNAME}
+        PUBLIC_MINIAPP_URL: ${PUBLIC_MINIAPP_URL}
+    image: multi-bot/admin:dev
+    restart: unless-stopped
+    ports:
+      - '5173:80'
+
+  frontend-miniapp:
+    container_name: multi-bot-dev-miniapp
+    build:
+      context: ./frontend-miniapp
+      args:
+        VITE_API_URL: ${PUBLIC_API_URL}
+        VITE_WEBAPP_URL: ${PUBLIC_WEBAPP_URL}
+        MAX_BOT_USERNAME: ${MAX_BOT_USERNAME}
+        VITE_SITE_URL: ${PUBLIC_ADMIN_URL}
+        VITE_BOT_SLUG: ${DEFAULT_BOT_SLUG:-default}
+    image: multi-bot/miniapp:dev
+    restart: unless-stopped
+    ports:
+      - '5174:80'
+
+volumes:
+  db-data:
+    name: multi-bot-dev-db-data
+  redis-data:
+    name: multi-bot-dev-redis-data
+  uploads-data:
+    name: multi-bot-dev-uploads-data
+  bot-secrets:
+    name: multi-bot-dev-bot-secrets
+
+networks:
+  default:
+    name: multi-bot-dev-network

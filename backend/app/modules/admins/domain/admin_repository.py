@@ -1,0 +1,19 @@
+from __future__ import annotations
+
+from typing import Protocol
+
+from .admin_account import AdminAccount
+
+
+class AdminAccountRepository(Protocol):
+    def list_all(self) -> list[AdminAccount]: ...
+
+    def find_by_max_user_id(self, max_user_id: str) -> AdminAccount | None: ...
+
+    def get(self, admin_id: int) -> AdminAccount | None: ...
+
+    def add(self, account: AdminAccount) -> AdminAccount: ...
+
+    def update(self, admin_id: int, changes: dict[str, object]) -> AdminAccount: ...
+
+    def delete(self, admin_id: int) -> None: ...
